@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>号码生成工具</title>
+<title>批量自动工具</title>
 <style>
 * {
   box-sizing: border-box;
@@ -747,7 +747,7 @@ h1 {
 </head>
 <body>
 <div class="container">
-  <h1>号码生成工具</h1>
+  <h1>批量自动工具</h1>
 
   <div class="section">
     <div class="section-title">手动录入区</div>
@@ -758,7 +758,7 @@ h1 {
   </div>
 
   <div class="section">
-    <div class="section-title">批量随机生成数据源</div>
+    <div class="section-title">批量随机生成五码</div>
     <div class="input-group">
       <label>随机生成数据源数量（1~100，填0则不随机生成）</label>
       <input type="number" id="randomCount" min="0" max="100" value="10" placeholder="请输入数量" oninput="updateSimilarity('group');saveConfig()">
@@ -831,7 +831,7 @@ h1 {
       <div id="duanzuList"></div>
 
       <div class="filter-subtitle" style="margin-top: 16px;">容错01（任意一套超限即删号）
-        <button class="btn-add" onclick="addRongcuo()">+ 添加容错01</button>
+        <button class="btn-add" onclick="addRongcuo()">+ 添加容错</button>
       </div>
       <div id="rongcuoList"></div>
     </div>
@@ -1077,6 +1077,72 @@ function hitRongcuo(code, rongcuoDigits) {
   return count >= 2;
 }
 
+function quickFilterCheck(source) {
+  const sourceDigits = source.split('');
+  const n = sourceDigits.length;
+
+  let totalCodes = n;
+  totalCodes += n * (n - 1) * 3;
+  totalCodes += (n * (n - 1) * (n - 2) / 6) * 6;
+
+  if (document.getElementById('filterZuSan').checked) {
+    let zuSanCount = n * (n - 1) * 2;
+    totalCodes -= zuSanCount;
+  }
+
+  if (document.getElementById('filterBaozi').checked) {
+    totalCodes -= n;
+  }
+
+  const hezhiDigits = getSelectedDigits('hezhiPicker');
+  if (hezhiDigits.length > 0) {
+    const excludeRatio = hezhiDigits.length / 10;
+    totalCodes = Math.ceil(totalCodes * (1 - excludeRatio * 0.6));
+  }
+
+  const danmaDigits = getSelectedDigits('danmaPicker');
+  const danmaCountDigits = getSelectedDigits('danmaCountPicker').map(d => parseInt(d));
+  const minCount = danmaCountDigits.length > 0 ? Math.max(...danmaCountDigits) : 1;
+
+  if (danmaDigits.length > 0) {
+    if (minCount === 1) {
+      let hasAny = 0;
+      for (const d of danmaDigits) {
+        if (sourceDigits.includes(d)) hasAny++;
+      }
+      if (hasAny > 0) {
+        totalCodes = Math.ceil(totalCodes * 0.8);
+      } else {
+        return 0;
+      }
+    } else if (minCount === 2) {
+      let hasCount = 0;
+      for (const d of danmaDigits) {
+        if (sourceDigits.includes(d)) hasCount++;
+      }
+      if (hasCount >= 2) {
+        totalCodes = Math.ceil(totalCodes * 0.5);
+      } else if (hasCount === 1) {
+        totalCodes = Math.ceil(totalCodes * 0.3);
+      } else {
+        return 0;
+      }
+    } else if (minCount === 3) {
+      let hasCount = 0;
+      for (const d of danmaDigits) {
+        if (sourceDigits.includes(d)) hasCount++;
+      }
+      if (hasCount >= 3) {
+        totalCodes = Math.ceil(totalCodes * 0.2);
+      } else {
+        return 0;
+      }
+    }
+  }
+
+  return Math.ceil(totalCodes / 5);
+}
+
 function applyFilters(pool, isRandom) {
   const filterRandom = document.getElementById('filterRandom').checked;
   if (isRandom && !filterRandom) {
@@ -1250,8 +1316,8 @@ function updateSimilarity(type) {
   if (maxGroupRepeat === 0 && groupPercent > 0) maxGroupRepeat = 1;
   if (maxStraightRepeat === 0 && straightPercent > 0) maxStraightRepeat = 1;
 
-  document.getElementById('groupSimilarityTip').textContent = '共' + totalCodes + '注，组选最多重复 ' + maxGroupRepeat + ' 注';
-  document.getElementById('straightSimilarityTip').textContent = '共' + totalCodes + '注，直选最多重复 ' + maxStraightRepeat + ' 注';
+  document.getElementById('groupSimilarityTip').textContent = '目前共' + totalCodes + '注，组选最多重复 ' + maxGroupRepeat + ' 注';
+  document.getElementById('straightSimilarityTip').textContent = '目前共' + totalCodes + '注，直选最多重复 ' + maxStraightRepeat + ' 注';
 }
 
 function validateSource(source) {
@@ -1431,24 +1497,50 @@ function generateAllResults() {
     allList.push({ ...item, isRandom: false });
   }
 
+  const generatedSources = [];
   const filterRandom = document.getElementById('filterRandom').checked;
+  const maxSameDigits = 2;
+
   for (let i = 0; i < randomCount; i++) {
     let source;
     let poolSize = 0;
     let attempts = 0;
     const maxAttempts = 1000;
+
     do {
       source = generateRandom5Digits();
       attempts++;
-      if (!filterRandom) break;
-      poolSize = generateNumberPool(source, '', true).length;
-    } while (attempts < maxAttempts && poolSize < 5);
 
-    if (filterRandom && poolSize < 5) {
+      if (filterRandom) {
+        poolSize = quickFilterCheck(source);
+        if (poolSize < 5) continue;
+      } else {
+        poolSize = 5;
+      }
+
+      const sourceSet = new Set(source.split(''));
+      let hasTooManySame = false;
+      for (const existing of generatedSources) {
+        let sameCount = 0;
+        for (const d of existing) {
+          if (sourceSet.has(d)) sameCount++;
+        }
+        if (sameCount > maxSameDigits) {
+          hasTooManySame = true;
+          break;
+        }
+      }
+      if (hasTooManySame) continue;
+
+      break;
+    } while (attempts < maxAttempts);
+
+    if (poolSize < 5) {
       alert('无法生成满足筛选条件的随机数据源，请放宽筛选条件');
       return;
     }
 
+    generatedSources.push(source);
     allList.push({ source, dan: '', isRandom: true });
   }
 
