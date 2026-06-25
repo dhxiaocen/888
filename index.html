@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>号码生成工具</title>
+<style>
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  background: #f5f6f8;
+  color: #333;
+  line-height: 1.6;
+  padding: 20px;
+}
+
+.container {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+h1 {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 24px;
+  color: #1a1a1a;
+}
+
+.section {
+  background: #fff;
+  border-radius: 10px;
+  padding: 20px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title::before {
+  content: "";
+  width: 4px;
+  height: 16px;
+  background: #4a6cf7;
+  border-radius: 2px;
+}
+
+.input-group {
+  margin-bottom: 12px;
+}
+
+.input-group label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.input-group input[type="text"]:focus,
+.input-group input[type="number"]:focus {
+  border-color: #4a6cf7;
+}
+
+.manual-item {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  background: #f8f9fb;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+
+.manual-item .input-group {
+  margin-bottom: 0;
+}
+
+.delete-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 18px;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.delete-btn:hover {
+  color: #e74c3c;
+  border-color: #e74c3c;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: #4a6cf7;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #3a5ae6;
+}
+
+.btn-secondary {
+  background: #f0f2f5;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+.btn-secondary:hover {
+  background: #e8eaed;
+}
+
+.btn-success {
+  background: #27ae60;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #219a52;
+}
+
+.btn-warning {
+  background: #f39c12;
+  color: #fff;
+}
+
+.btn-warning:hover {
+  background: #e67e22;
+}
+
+.btn-danger {
+  background: #e74c3c;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #c0392b;
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.add-btn-wrap {
+  margin-top: 12px;
+}
+
+.similarity-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.slider-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.slider-group input[type="range"] {
+  flex: 1;
+  height: 6px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #e0e0e0;
+  border-radius: 3px;
+  outline: none;
+}
+
+.slider-group input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4a6cf7;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.slider-group input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  background: #4a6cf7;
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+.slider-value {
+  min-width: 60px;
+  text-align: right;
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a6cf7;
+}
+
+.similarity-tip {
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+.filter-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.filter-subtitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  margin: 12px 0 8px 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #eee;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #333;
+  cursor: pointer;
+}
+
+.switch-label input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.btn-add {
+  font-size: 12px;
+  padding: 2px 8px;
+  background: #4a6cf7;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: normal;
+}
+
+.btn-add:hover {
+  background: #3a5ce7;
+}
+
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: #e74c3c;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(20px);
+}
+
+.switch-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.switch-row:last-child {
+  border-bottom: none;
+}
+
+.switch-row .switch-label-text {
+  font-size: 14px;
+  color: #333;
+}
+
+.digit-picker {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  margin-bottom: 12px;
+}
+
+.digit-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.digit-btn:hover {
+  border-color: #e74c3c;
+  color: #e74c3c;
+}
+
+.digit-btn.active {
+  background: #e74c3c;
+  border-color: #e74c3c;
+  color: #fff;
+}
+
+.digit-label {
+  font-size: 13px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.duanzu-item {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.duanzu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.duanzu-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.duanzu-delete-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.duanzu-delete-btn:hover {
+  background: #fff0f0;
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.duanzu-inputs {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.duanzu-inputs input {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.duanzu-inputs input:focus {
+  border-color: #e74c3c;
+}
+
+.duanzu-sep {
+  color: #999;
+  font-size: 14px;
+  text-align: center;
+}
+
+.rongcuo-item {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.rongcuo-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.rongcuo-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+}
+
+.rongcuo-delete-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid #ddd;
+  background: #fff;
+  border-radius: 50%;
+  cursor: pointer;
+  color: #999;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.rongcuo-delete-btn:hover {
+  background: #fff0f0;
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.filter-item input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.filter-item .delete-btn {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #999;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.filter-item .delete-btn:hover {
+  background: #fff0f0;
+  color: #ff4d4f;
+  border-color: #ff4d4f;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.result-count {
+  font-size: 14px;
+  color: #666;
+}
+
+.result-content {
+  background: #f8f9fb;
+  border-radius: 8px;
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+  font-family: "SF Mono", Consolas, Monaco, monospace;
+  font-size: 13px;
+  line-height: 2;
+  color: #333;
+}
+
+.result-line {
+  padding: 6px 8px;
+  border-radius: 4px;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.result-line:hover {
+  background: #eef0f3;
+}
+
+.result-line-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.result-source {
+  color: #4a6cf7;
+  font-weight: 600;
+  margin-right: 12px;
+}
+
+.result-idx {
+  color: #999;
+  margin-right: 4px;
+  min-width: 22px;
+  display: inline-block;
+  text-align: right;
+}
+
+.result-code {
+  margin-right: 8px;
+  color: #333;
+}
+
+.copy-line-btn {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  font-size: 12px;
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.copy-line-btn:hover {
+  background: #4a6cf7;
+  color: #fff;
+  border-color: #4a6cf7;
+}
+
+.result-divider {
+  text-align: center;
+  color: #999;
+  font-size: 12px;
+  padding: 8px 0;
+  margin: 4px 0;
+  border-top: 1px dashed #e0e0e0;
+}
+
+.result-group-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #666;
+  padding: 8px 4px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+  background: #eef1f6;
+  border-radius: 4px;
+  padding-left: 10px;
+}
+
+.history-item {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  font-size: 12px;
+  color: #888;
+}
+
+.history-delete-btn {
+  font-size: 12px;
+  padding: 2px 6px;
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  color: #666;
+  cursor: pointer;
+}
+
+.history-delete-btn:hover {
+  background: #ff4d4f;
+  color: #fff;
+  border-color: #ff4d4f;
+}
+
+.history-content {
+  padding: 8px;
+}
+
+.copy-btn-wrap {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.empty-tip {
+  text-align: center;
+  color: #999;
+  padding: 40px 0;
+  font-size: 14px;
+}
+
+@media (max-width: 640px) {
+  body {
+    padding: 12px;
+  }
+
+  h1 {
+    font-size: 20px;
+    margin-bottom: 16px;
+  }
+
+  .section {
+    padding: 16px;
+  }
+
+  .manual-item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .delete-btn {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+  }
+
+  .manual-item {
+    position: relative;
+  }
+
+  .similarity-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .action-row {
+    grid-template-columns: 1fr;
+  }
+
+  .result-content {
+    font-size: 12px;
+  }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>号码生成工具</h1>
+
+  <div class="section">
+    <div class="section-title">手动录入区</div>
+    <div id="manualList"></div>
+    <div class="add-btn-wrap">
+      <button class="btn btn-secondary btn-block" onclick="addManualItem()">＋ 新增一组</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">批量随机生成数据源</div>
+    <div class="input-group">
+      <label>随机生成数据源数量（1~100，填0则不随机生成）</label>
+      <input type="number" id="randomCount" min="0" max="100" value="10" placeholder="请输入数量" oninput="updateSimilarity('group');saveConfig()">
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">相似度百分比调控</div>
+    <div class="similarity-row">
+      <div class="input-group">
+        <label>组选重复相似度上限（%）</label>
+        <div class="slider-group">
+          <input type="range" id="groupSimilarity" min="0" max="100" value="100" oninput="updateSimilarity('group');saveConfig()">
+          <span class="slider-value" id="groupSimilarityValue">100%</span>
+        </div>
+        <div class="similarity-tip" id="groupSimilarityTip">组选最多允许重复 0 注</div>
+      </div>
+      <div class="input-group">
+        <label>直选重复相似度上限（%）</label>
+        <div class="slider-group">
+          <input type="range" id="straightSimilarity" min="0" max="100" value="100" oninput="updateSimilarity('straight');saveConfig()">
+          <span class="slider-value" id="straightSimilarityValue">100%</span>
+        </div>
+        <div class="similarity-tip" id="straightSimilarityTip">直选最多允许重复 0 注</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="result-header" onclick="toggleFilterSection()" style="cursor:pointer;">
+      <div class="section-title" style="margin-bottom: 0;"><span id="filterSectionArrow">▼</span> 筛选条件</div>
+    </div>
+    <div id="filterContent">
+      <div class="filter-subtitle">开关设置</div>
+      <div class="switch-row">
+        <span class="switch-label-text">随机数据源适用筛选</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="filterRandom" checked onchange="saveConfig()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="switch-row">
+        <span class="switch-label-text">剔除组三</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="filterZuSan" onchange="saveConfig()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="switch-row">
+        <span class="switch-label-text">剔除豹子</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="filterBaozi" onchange="saveConfig()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="filter-subtitle">胆码</div>
+      <div class="digit-label">选择数字（点击选中/取消）</div>
+      <div class="digit-picker" id="danmaPicker"></div>
+      <div class="digit-label" style="margin-top: 12px;">至少包含几个胆</div>
+      <div class="digit-picker" id="danmaCountPicker"></div>
+
+      <div class="filter-subtitle" style="margin-top: 16px;">排除和值尾</div>
+      <div class="digit-label">和值尾数（点击选中/取消）</div>
+      <div class="digit-picker" id="hezhiPicker"></div>
+
+      <div class="filter-subtitle" style="margin-top: 16px;">断组（任意一套命中即删号）
+        <button class="btn-add" onclick="addDuanzu()">+ 添加断组</button>
+      </div>
+      <div id="duanzuList"></div>
+
+      <div class="filter-subtitle" style="margin-top: 16px;">容错01（任意一套超限即删号）
+        <button class="btn-add" onclick="addRongcuo()">+ 添加容错01</button>
+      </div>
+      <div id="rongcuoList"></div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="action-row">
+      <button class="btn btn-primary btn-block" onclick="generateAllResults()">批量生成全部结果</button>
+      <button class="btn btn-danger btn-block" onclick="clearAll()">清空所有内容</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="result-header">
+      <div class="section-title" style="margin-bottom: 0;">结果展示</div>
+      <span class="result-count" id="resultCount">共 0 条</span>
+    </div>
+    <div class="result-content" id="resultContent">
+      <div class="empty-tip">暂无结果，请先配置数据源并点击生成</div>
+    </div>
+    <div class="copy-btn-wrap">
+      <button class="btn btn-secondary" onclick="saveToHistory()">保存到历史记录</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="result-header" onclick="toggleHistorySection()" style="cursor:pointer;">
+      <div class="section-title" style="margin-bottom: 0;"><span id="historySectionArrow">▼</span> 历史记录</div>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();clearAllHistory()" style="font-size: 12px; padding: 4px 8px;">清空全部历史</button>
+    </div>
+    <div class="result-content" id="historyContent">
+      <div class="empty-tip">暂无历史记录</div>
+    </div>
+  </div>
+</div>
+
+<script>
+let manualItemCount = 0;
+let duanzuCount = 0;
+let rongcuoCount = 0;
+
+function initDigitPicker(containerId, onChangeCallback, digits = null, isSingleSelect = false) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  const numDigits = digits || [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  for (const i of numDigits) {
+    const btn = document.createElement('div');
+    btn.className = 'digit-btn';
+    btn.textContent = i;
+    btn.dataset.digit = i;
+    btn.onclick = function() {
+      if (isSingleSelect) {
+        const allBtns = container.querySelectorAll('.digit-btn');
+        allBtns.forEach(b => b.classList.remove('active'));
+      }
+      btn.classList.toggle('active');
+      if (onChangeCallback) onChangeCallback();
+    };
+    container.appendChild(btn);
+  }
+}
+
+function getSelectedDigits(containerId) {
+  const container = document.getElementById(containerId);
+  if (!container) return [];
+  const activeBtns = container.querySelectorAll('.digit-btn.active');
+  return Array.from(activeBtns).map(btn => btn.dataset.digit);
+}
+
+function setSelectedDigits(containerId, digits) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const btns = container.querySelectorAll('.digit-btn');
+  btns.forEach(btn => {
+    if (digits.includes(btn.dataset.digit)) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+}
+
+function addDuanzu(p1 = '', p2 = '', p3 = '') {
+  duanzuCount++;
+  const id = duanzuCount;
+  const list = document.getElementById('duanzuList');
+  const item = document.createElement('div');
+  item.className = 'duanzu-item';
+  item.id = 'duanzu-' + id;
+  item.innerHTML = `
+    <div class="duanzu-header">
+      <span class="duanzu-title">断组${id}</span>
+      <button class="duanzu-delete-btn" onclick="deleteDuanzu(${id})">−</button>
+    </div>
+    <div class="duanzu-inputs">
+      <input type="text" class="duanzu-p1" placeholder="例：19" value="${p1}" oninput="saveConfig()">
+      <span class="duanzu-sep">-</span>
+      <input type="text" class="duanzu-p2" placeholder="例：678" value="${p2}" oninput="saveConfig()">
+      <span class="duanzu-sep">-</span>
+      <input type="text" class="duanzu-p3" placeholder="例：0235" value="${p3}" oninput="saveConfig()">
+    </div>
+  `;
+  list.appendChild(item);
+  saveConfig();
+}
+
+function deleteDuanzu(id) {
+  const item = document.getElementById('duanzu-' + id);
+  if (item) {
+    item.remove();
+  }
+  renumberDuanzu();
+  saveConfig();
+}
+
+function renumberDuanzu() {
+  const items = document.querySelectorAll('.duanzu-item');
+  duanzuCount = items.length;
+  let newId = 1;
+  items.forEach(item => {
+    const oldId = item.id.replace('duanzu-', '');
+    item.id = 'duanzu-' + newId;
+    const titleEl = item.querySelector('.duanzu-title');
+    if (titleEl) {
+      titleEl.textContent = '断组' + newId;
+    }
+    const delBtn = item.querySelector('.duanzu-delete-btn');
+    if (delBtn) {
+      delBtn.setAttribute('onclick', 'deleteDuanzu(' + newId + ')');
+    }
+    newId++;
+  });
+}
+
+function addRongcuo(digits = []) {
+  rongcuoCount++;
+  const id = rongcuoCount;
+  const list = document.getElementById('rongcuoList');
+  const item = document.createElement('div');
+  item.className = 'rongcuo-item';
+  item.id = 'rongcuo-' + id;
+  item.innerHTML = `
+    <div class="rongcuo-header">
+      <span class="rongcuo-title">容错-0${id}</span>
+      <button class="rongcuo-delete-btn" onclick="deleteRongcuo(${id})">−</button>
+    </div>
+    <div class="digit-picker rongcuo-picker" id="rongcuo-picker-${id}"></div>
+  `;
+  list.appendChild(item);
+
+  const picker = item.querySelector('.rongcuo-picker');
+  for (let i = 0; i <= 9; i++) {
+    const btn = document.createElement('div');
+    btn.className = 'digit-btn';
+    btn.textContent = i;
+    btn.dataset.digit = i;
+    if (digits.includes(i.toString())) {
+      btn.classList.add('active');
+    }
+    btn.onclick = function() {
+      btn.classList.toggle('active');
+      saveConfig();
+    };
+    picker.appendChild(btn);
+  }
+
+  saveConfig();
+}
+
+function getRongcuoDigits(id) {
+  const picker = document.getElementById('rongcuo-picker-' + id);
+  if (!picker) return [];
+  const activeBtns = picker.querySelectorAll('.digit-btn.active');
+  return Array.from(activeBtns).map(btn => btn.dataset.digit);
+}
+
+function deleteRongcuo(id) {
+  const item = document.getElementById('rongcuo-' + id);
+  if (item) {
+    item.remove();
+  }
+  renumberRongcuo();
+  saveConfig();
+}
+
+function renumberRongcuo() {
+  const items = document.querySelectorAll('.rongcuo-item');
+  rongcuoCount = items.length;
+  let newId = 1;
+  items.forEach(item => {
+    const oldId = item.id.replace('rongcuo-', '');
+    item.id = 'rongcuo-' + newId;
+    const titleEl = item.querySelector('.rongcuo-title');
+    if (titleEl) {
+      titleEl.textContent = '容错-0' + newId;
+    }
+    const picker = item.querySelector('.rongcuo-picker');
+    if (picker) {
+      picker.id = 'rongcuo-picker-' + newId;
+    }
+    const delBtn = item.querySelector('.rongcuo-delete-btn');
+    if (delBtn) {
+      delBtn.setAttribute('onclick', 'deleteRongcuo(' + newId + ')');
+    }
+    newId++;
+  });
+}
+
+function isZuSanCode(code) {
+  const digits = code.split('').sort();
+  if (digits[0] === digits[1] && digits[1] !== digits[2]) return true;
+  if (digits[1] === digits[2] && digits[0] !== digits[1]) return true;
+  return false;
+}
+
+function hitDuanzu(code, p1, p2, p3) {
+  const parts = [p1, p2, p3].filter(s => s && s.trim() !== '');
+  if (parts.length < 2) return false;
+  const digits = new Set(code.split(''));
+  for (const part of parts) {
+    let hit = false;
+    for (const d of part) {
+      if (digits.has(d)) {
+        hit = true;
+        break;
+      }
+    }
+    if (!hit) return false;
+  }
+  return true;
+}
+
+function hitRongcuo(code, rongcuoDigits) {
+  if (!rongcuoDigits || rongcuoDigits.length === 0) return false;
+  const digits = new Set(code.split(''));
+  let count = 0;
+  for (const num of rongcuoDigits) {
+    if (digits.has(num)) {
+      count++;
+    }
+  }
+  return count >= 2;
+}
+
+function applyFilters(pool, isRandom) {
+  const filterRandom = document.getElementById('filterRandom').checked;
+  if (isRandom && !filterRandom) {
+    return pool;
+  }
+
+  let result = [...pool];
+
+  if (document.getElementById('filterZuSan').checked) {
+    result = result.filter(code => !isZuSanCode(code));
+  }
+
+  if (document.getElementById('filterBaozi').checked) {
+    result = result.filter(code => !isLeopardCode(code));
+  }
+
+  const duanzuItems = document.querySelectorAll('.duanzu-item');
+  const duanzuList = [];
+  for (const item of duanzuItems) {
+    const p1 = item.querySelector('.duanzu-p1').value.trim();
+    const p2 = item.querySelector('.duanzu-p2').value.trim();
+    const p3 = item.querySelector('.duanzu-p3').value.trim();
+    if (p1 || p2 || p3) {
+      duanzuList.push({ p1, p2, p3 });
+    }
+  }
+  if (duanzuList.length > 0) {
+    result = result.filter(code => {
+      for (const dz of duanzuList) {
+        if (hitDuanzu(code, dz.p1, dz.p2, dz.p3)) return false;
+      }
+      return true;
+    });
+  }
+
+  const hezhiDigits = getSelectedDigits('hezhiPicker');
+  if (hezhiDigits.length > 0) {
+    result = result.filter(code => {
+      const sum = parseInt(code[0]) + parseInt(code[1]) + parseInt(code[2]);
+      const tail = sum % 10;
+      return !hezhiDigits.includes(tail.toString());
+    });
+  }
+
+  const rongcuoItems = document.querySelectorAll('.rongcuo-item');
+  const rongcuoList = [];
+  for (let i = 1; i <= rongcuoCount; i++) {
+    const item = document.getElementById('rongcuo-' + i);
+    if (item) {
+      const digits = getRongcuoDigits(i);
+      if (digits.length > 0) {
+        rongcuoList.push(digits);
+      }
+    }
+  }
+  if (rongcuoList.length > 0) {
+    result = result.filter(code => {
+      for (const rc of rongcuoList) {
+        if (hitRongcuo(code, rc)) return false;
+      }
+      return true;
+    });
+  }
+
+  const danmaDigits = getSelectedDigits('danmaPicker');
+  if (danmaDigits.length > 0) {
+    const danmaCountDigits = getSelectedDigits('danmaCountPicker').map(d => parseInt(d));
+    const minCount = danmaCountDigits.length > 0 ? Math.max(...danmaCountDigits) : 1;
+    result = result.filter(code => {
+      let count = 0;
+      for (const d of danmaDigits) {
+        if (code.includes(d)) count++;
+      }
+      return count >= minCount;
+    });
+  }
+
+  return result;
+}
+
+function addManualItem() {
+  manualItemCount++;
+  const id = manualItemCount;
+  const list = document.getElementById('manualList');
+  const item = document.createElement('div');
+  item.className = 'manual-item';
+  item.id = 'manual-' + id;
+  item.innerHTML = `
+    <div class="input-group">
+      <label>数据源（4-10位不重复数字）</label>
+      <input type="text" class="source-input" placeholder="例如：12345" maxlength="10" oninput="saveConfig()">
+    </div>
+    <div class="input-group">
+      <label>铁胆（单数字/空）</label>
+      <input type="text" class="dan-input" placeholder="例如：5" maxlength="1" oninput="saveConfig()">
+    </div>
+    <button class="delete-btn" onclick="deleteManualItem(${id})" title="删除">×</button>
+  `;
+  list.appendChild(item);
+  saveConfig();
+}
+
+function deleteManualItem(id) {
+  const item = document.getElementById('manual-' + id);
+  if (item) {
+    item.remove();
+  }
+  if (document.querySelectorAll('.manual-item').length === 0) {
+    addManualItem();
+  }
+  saveConfig();
+}
+
+function updateSliderValue(type) {
+  if (type === 'group') {
+    const val = document.getElementById('groupSimilarity').value;
+    document.getElementById('groupSimilarityValue').textContent = val + '%';
+  } else {
+    const val = document.getElementById('straightSimilarity').value;
+    document.getElementById('straightSimilarityValue').textContent = val + '%';
+  }
+}
+
+function isLeopardCode(code) {
+  return code[0] === code[1] && code[1] === code[2];
+}
+
+function getSourceCount() {
+  const results = window._lastResults || [];
+  if (results.length > 0) {
+    return results.length;
+  }
+
+  let count = 0;
+  const manualItems = document.querySelectorAll('.manual-item');
+  for (const item of manualItems) {
+    const source = item.querySelector('.source-input').value.trim();
+    if (source !== '') {
+      count++;
+    }
+  }
+
+  const randomCountInput = document.getElementById('randomCount');
+  let randomCount = parseInt(randomCountInput.value);
+  if (isNaN(randomCount) || randomCount < 0) {
+    randomCount = 0;
+  }
+  count += randomCount;
+
+  return count;
+}
+
+function updateSimilarity(type) {
+  if (type === 'group') {
+    const val = document.getElementById('groupSimilarity').value;
+    document.getElementById('groupSimilarityValue').textContent = val + '%';
+  } else {
+    const val = document.getElementById('straightSimilarity').value;
+    document.getElementById('straightSimilarityValue').textContent = val + '%';
+  }
+
+  const sourceCount = getSourceCount();
+  const totalCodes = sourceCount * 5;
+
+  const groupPercent = parseInt(document.getElementById('groupSimilarity').value);
+  const straightPercent = parseInt(document.getElementById('straightSimilarity').value);
+
+  let maxGroupRepeat = Math.floor(totalCodes * groupPercent / 100);
+  let maxStraightRepeat = Math.floor(totalCodes * straightPercent / 100);
+
+  if (maxGroupRepeat === 0 && groupPercent > 0) maxGroupRepeat = 1;
+  if (maxStraightRepeat === 0 && straightPercent > 0) maxStraightRepeat = 1;
+
+  document.getElementById('groupSimilarityTip').textContent = '共' + totalCodes + '注，组选最多重复 ' + maxGroupRepeat + ' 注';
+  document.getElementById('straightSimilarityTip').textContent = '共' + totalCodes + '注，直选最多重复 ' + maxStraightRepeat + ' 注';
+}
+
+function validateSource(source) {
+  if (!source || source.length < 4 || source.length > 10) {
+    return { valid: false, msg: '数据源必须是4-10位数字' };
+  }
+  if (!/^\d+$/.test(source)) {
+    return { valid: false, msg: '数据源只能包含数字' };
+  }
+  const unique = new Set(source.split(''));
+  if (unique.size !== source.length) {
+    return { valid: false, msg: '数据源数字不能重复' };
+  }
+  return { valid: true };
+}
+
+function validateDan(dan) {
+  if (dan === '') return { valid: true };
+  if (!/^\d$/.test(dan)) {
+    return { valid: false, msg: '铁胆只能是单个数字或留空' };
+  }
+  return { valid: true };
+}
+
+function generateRandomSources() {
+  const countInput = document.getElementById('randomCount');
+  let count = parseInt(countInput.value);
+
+  if (isNaN(count) || count < 1 || count > 100) {
+    alert('随机生成数量必须是1~100之间的整数');
+    return;
+  }
+
+  const sourceList = [];
+  for (let i = 0; i < count; i++) {
+    sourceList.push({ source: generateRandom5Digits(), dan: '' });
+  }
+
+  generateResultsFromList(sourceList);
+}
+
+function generateRandom5Digits() {
+  const digits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+  const result = [];
+  for (let i = 0; i < 5; i++) {
+    const idx = Math.floor(Math.random() * digits.length);
+    result.push(digits.splice(idx, 1)[0]);
+  }
+  return result.join('');
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function generateAll3DigitCodes(sourceDigits) {
+  const digits = sourceDigits.split('');
+  const n = digits.length;
+  const codes = [];
+
+  for (let i = 0; i < n; i++) {
+    codes.push(digits[i] + digits[i] + digits[i]);
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      if (i === j) continue;
+      const a = digits[i];
+      const b = digits[j];
+      codes.push(a + a + b);
+      codes.push(a + b + a);
+      codes.push(b + a + a);
+    }
+  }
+
+  for (let i = 0; i < n; i++) {
+    for (let j = i + 1; j < n; j++) {
+      for (let k = j + 1; k < n; k++) {
+        const a = digits[i];
+        const b = digits[j];
+        const c = digits[k];
+        codes.push(a + b + c);
+        codes.push(a + c + b);
+        codes.push(b + a + c);
+        codes.push(b + c + a);
+        codes.push(c + a + b);
+        codes.push(c + b + a);
+      }
+    }
+  }
+
+  return codes;
+}
+
+function getGroupKey(code) {
+  return code.split('').sort().join('');
+}
+
+function generateNumberPool(source, dan, isRandom = false) {
+  const allCodes = generateAll3DigitCodes(source);
+
+  const groupMap = {};
+  for (const code of allCodes) {
+    const key = getGroupKey(code);
+    if (!groupMap[key]) {
+      groupMap[key] = [];
+    }
+    groupMap[key].push(code);
+  }
+
+  let pool = [];
+  const groupKeys = Object.keys(groupMap);
+  shuffle(groupKeys);
+
+  for (const key of groupKeys) {
+    const variants = groupMap[key];
+    shuffle(variants);
+    pool.push(variants[0]);
+  }
+
+  pool = applyFilters(pool, isRandom);
+
+  if (dan !== '') {
+    pool = pool.filter(code => code.includes(dan));
+  }
+
+  shuffle(pool);
+  return pool;
+}
+
+function generateAllResults() {
+  const manualList = [];
+  const manualItems = document.querySelectorAll('.manual-item');
+
+  for (const item of manualItems) {
+    const source = item.querySelector('.source-input').value.trim();
+    const dan = item.querySelector('.dan-input').value.trim();
+
+    if (source === '') continue;
+
+    const srcValid = validateSource(source);
+    if (!srcValid.valid) {
+      alert('数据源 "' + source + '" 无效：' + srcValid.msg);
+      return;
+    }
+
+    const danValid = validateDan(dan);
+    if (!danValid.valid) {
+      alert('铁胆无效：' + danValid.msg);
+      return;
+    }
+
+    manualList.push({ source, dan });
+  }
+
+  const randomCountInput = document.getElementById('randomCount');
+  let randomCount = parseInt(randomCountInput.value);
+  if (isNaN(randomCount) || randomCount < 0) {
+    randomCount = 0;
+  }
+  if (randomCount > 100) {
+    alert('随机生成数量不能超过100');
+    return;
+  }
+
+  if (manualList.length === 0 && randomCount === 0) {
+    alert('请至少输入一组数据源或设置随机生成数量');
+    return;
+  }
+
+  const allList = [];
+  for (const item of manualList) {
+    allList.push({ ...item, isRandom: false });
+  }
+
+  const filterRandom = document.getElementById('filterRandom').checked;
+  for (let i = 0; i < randomCount; i++) {
+    let source;
+    let poolSize = 0;
+    let attempts = 0;
+    const maxAttempts = 1000;
+    do {
+      source = generateRandom5Digits();
+      attempts++;
+      if (!filterRandom) break;
+      poolSize = generateNumberPool(source, '', true).length;
+    } while (attempts < maxAttempts && poolSize < 5);
+
+    if (filterRandom && poolSize < 5) {
+      alert('无法生成满足筛选条件的随机数据源，请放宽筛选条件');
+      return;
+    }
+
+    allList.push({ source, dan: '', isRandom: true });
+  }
+
+  generateResultsFromList(allList);
+}
+
+function generateResultsFromList(sourceList) {
+  const groupPercent = parseInt(document.getElementById('groupSimilarity').value);
+  const straightPercent = parseInt(document.getElementById('straightSimilarity').value);
+
+  const totalCount = sourceList.length * 5;
+  let maxGroupCount = Math.floor(totalCount * groupPercent / 100);
+  let maxStraightCount = Math.floor(totalCount * straightPercent / 100);
+
+  if (maxGroupCount === 0 && groupPercent > 0) maxGroupCount = 1;
+  if (maxStraightCount === 0 && straightPercent > 0) maxStraightCount = 1;
+
+  const allPools = [];
+  for (const item of sourceList) {
+    const pool = generateNumberPool(item.source, item.dan, item.isRandom);
+    if (pool.length < 5) {
+      alert('数据源 "' + item.source + '" 生成的号码池不足5注，请放宽条件');
+      return;
+    }
+    allPools.push({ ...item, pool });
+  }
+
+  const result = [];
+  const groupCountMap = {};
+  const straightCountMap = {};
+
+  for (const item of allPools) {
+    const selected = [];
+    const usedGroups = new Set();
+    let leopardCount = 0;
+    const pool = [...item.pool];
+
+    let attempts = 0;
+    const maxAttempts = pool.length * 3;
+
+    while (selected.length < 5 && attempts < maxAttempts) {
+      attempts++;
+      let found = false;
+
+      for (let i = 0; i < pool.length; i++) {
+        const code = pool[i];
+        const groupKey = getGroupKey(code);
+
+        if (usedGroups.has(groupKey)) continue;
+
+        const currentGroupCount = groupCountMap[groupKey] || 0;
+        const currentStraightCount = straightCountMap[code] || 0;
+
+        if (currentGroupCount >= maxGroupCount) continue;
+        if (currentStraightCount >= maxStraightCount) continue;
+
+        if (isLeopardCode(code) && leopardCount >= 1) continue;
+
+        selected.push(code);
+        usedGroups.add(groupKey);
+        groupCountMap[groupKey] = currentGroupCount + 1;
+        straightCountMap[code] = currentStraightCount + 1;
+        if (isLeopardCode(code)) {
+          leopardCount++;
+        }
+        pool.splice(i, 1);
+        found = true;
+        break;
+      }
+
+      if (!found) break;
+    }
+
+    if (selected.length < 5) {
+      alert('备选号码池不足以满足相似度限制，请放宽百分比数值或减少生成数据源条数');
+      return;
+    }
+
+    result.push({
+      source: item.source,
+      codes: selected,
+      isRandom: item.isRandom
+    });
+  }
+
+  renderResults(result);
+  updateSimilarity('group');
+  saveConfig();
+}
+
+function sortSourceAsc(source) {
+  return source.split('').sort().join('');
+}
+
+function renderResults(results) {
+  const content = document.getElementById('resultContent');
+  const countEl = document.getElementById('resultCount');
+
+  countEl.textContent = '共 ' + results.length + ' 条';
+
+  if (results.length === 0) {
+    content.innerHTML = '<div class="empty-tip">暂无结果</div>';
+    return;
+  }
+
+  let html = '';
+  const manualResults = [];
+  const randomResults = [];
+
+  for (let i = 0; i < results.length; i++) {
+    const item = results[i];
+    if (item.isRandom) {
+      randomResults.push(item);
+    } else {
+      manualResults.push(item);
+    }
+  }
+
+  let globalIndex = 0;
+  window._lastResults = [];
+
+  if (manualResults.length > 0) {
+    html += '<div class="result-group-title">手动录入结果（' + manualResults.length + ' 条）</div>';
+    for (let i = 0; i < manualResults.length; i++) {
+      const item = manualResults[i];
+      const sortedSource = sortSourceAsc(item.source);
+      html += '<div class="result-line">';
+      html += '<div class="result-line-content">';
+      html += '<span class="result-idx">' + (i + 1) + '.</span>';
+      html += '<span class="result-source">' + sortedSource + '</span>';
+      for (const code of item.codes) {
+        html += '<span class="result-code">' + code + '</span>';
+      }
+      html += '</div>';
+      html += '<button class="copy-line-btn" onclick="copyLine(' + globalIndex + ')">复制本行</button>';
+      html += '</div>';
+      window._lastResults.push(item);
+      globalIndex++;
+    }
+  }
+
+  if (randomResults.length > 0) {
+    html += '<div class="result-group-title">随机生成结果（' + randomResults.length + ' 条）</div>';
+    for (let i = 0; i < randomResults.length; i++) {
+      const item = randomResults[i];
+      const sortedSource = sortSourceAsc(item.source);
+      html += '<div class="result-line">';
+      html += '<div class="result-line-content">';
+      html += '<span class="result-idx">' + (i + 1) + '.</span>';
+      html += '<span class="result-source">' + sortedSource + '</span>';
+      for (const code of item.codes) {
+        html += '<span class="result-code">' + code + '</span>';
+      }
+      html += '</div>';
+      html += '<button class="copy-line-btn" onclick="copyLine(' + globalIndex + ')">复制本行</button>';
+      html += '</div>';
+      window._lastResults.push(item);
+      globalIndex++;
+    }
+  }
+
+  content.innerHTML = html;
+}
+
+function copyLine(index) {
+  const results = window._lastResults || [];
+  if (!results[index]) return;
+
+  const item = results[index];
+  const sortedSource = sortSourceAsc(item.source);
+  const text = sortedSource + ' ' + item.codes.join(' ');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制本行');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('已复制本行');
+  });
+}
+
+function copyAllResults() {
+  const results = window._lastResults || [];
+  if (results.length === 0) {
+    alert('暂无结果可复制');
+    return;
+  }
+
+  let text = '';
+  for (const item of results) {
+    const sortedSource = sortSourceAsc(item.source);
+    text += sortedSource + ' ' + item.codes.join(' ') + '\n';
+  }
+  text = text.trim();
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制全部结果');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('已复制全部结果');
+  });
+}
+
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.75);color:#fff;padding:12px 24px;border-radius:8px;font-size:14px;z-index:9999;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 1500);
+}
+
+function clearAll() {
+  if (!confirm('确定要清空所有内容吗？')) return;
+
+  const list = document.getElementById('manualList');
+  list.innerHTML = '';
+  manualItemCount = 0;
+  addManualItem();
+
+  document.getElementById('groupSimilarity').value = 100;
+  document.getElementById('straightSimilarity').value = 100;
+
+  document.getElementById('filterRandom').checked = true;
+  document.getElementById('filterZuSan').checked = false;
+  document.getElementById('filterBaozi').checked = false;
+
+  initDigitPicker('danmaPicker', saveConfig);
+  initDigitPicker('hezhiPicker', saveConfig);
+  initDigitPicker('danmaCountPicker', saveConfig, [1, 2, 3], true);
+
+  document.getElementById('duanzuList').innerHTML = '';
+  document.getElementById('rongcuoList').innerHTML = '';
+  duanzuCount = 0;
+  rongcuoCount = 0;
+  addDuanzu();
+  addRongcuo();
+
+  document.getElementById('resultContent').innerHTML = '<div class="empty-tip">暂无结果，请先配置数据源并点击生成</div>';
+  document.getElementById('resultCount').textContent = '共 0 条';
+
+  window._lastResults = [];
+  updateSimilarity('group');
+  updateSimilarity('straight');
+  saveConfig();
+}
+
+function saveToHistory() {
+  const results = window._lastResults || [];
+  if (results.length === 0) {
+    alert('暂无结果可保存');
+    return;
+  }
+
+  const history = getHistory();
+  const record = {
+    id: Date.now(),
+    timestamp: new Date().toLocaleString(),
+    results: [...results]
+  };
+
+  history.unshift(record);
+  localStorage.setItem('mindmap_history', JSON.stringify(history));
+  renderHistory();
+  showToast('已保存到历史记录');
+}
+
+function getHistory() {
+  try {
+    const data = localStorage.getItem('mindmap_history');
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+function renderHistory() {
+  const content = document.getElementById('historyContent');
+  const history = getHistory();
+
+  if (history.length === 0) {
+    content.innerHTML = '<div class="empty-tip">暂无历史记录</div>';
+    return;
+  }
+
+  if (!window._historyExpanded) {
+    loadHistoryExpandedState();
+  }
+
+  let html = '';
+  for (const record of history) {
+    const manualCount = record.results.filter(r => !r.isRandom).length;
+    const randomCount = record.results.filter(r => r.isRandom).length;
+    const isExpanded = window._historyExpanded[record.id] === true;
+
+    html += '<div class="history-item">';
+    html += '<div class="history-header" onclick="toggleHistoryItem(' + record.id + ')" style="cursor:pointer;">';
+    html += '<span>' + (isExpanded ? '▼' : '▶') + ' ' + record.timestamp + '（共' + record.results.length + '条，手动' + manualCount + '条，随机' + randomCount + '条）</span>';
+    html += '<button class="history-delete-btn" onclick="event.stopPropagation();deleteHistoryItem(' + record.id + ')">删除</button>';
+    html += '</div>';
+    if (isExpanded) {
+      html += '<div class="history-content">';
+
+      const manualResults = record.results.filter(r => !r.isRandom);
+      const randomResults = record.results.filter(r => r.isRandom);
+
+      if (manualResults.length > 0) {
+        html += '<div class="result-group-title">手动录入结果（' + manualResults.length + ' 条）</div>';
+        for (let i = 0; i < manualResults.length; i++) {
+          const item = manualResults[i];
+          const sortedSource = sortSourceAsc(item.source);
+          html += '<div class="result-line">';
+          html += '<div class="result-line-content">';
+          html += '<span class="result-idx">' + (i + 1) + '.</span>';
+          html += '<span class="result-source">' + sortedSource + '</span>';
+          for (const code of item.codes) {
+            html += '<span class="result-code">' + code + '</span>';
+          }
+          html += '</div>';
+          html += '<button class="copy-line-btn" onclick="copyHistoryLine(' + record.id + ', ' + i + ', false)">复制本行</button>';
+          html += '</div>';
+        }
+      }
+
+      if (randomResults.length > 0) {
+        html += '<div class="result-group-title">随机生成结果（' + randomResults.length + ' 条）</div>';
+        for (let i = 0; i < randomResults.length; i++) {
+          const item = randomResults[i];
+          const sortedSource = sortSourceAsc(item.source);
+          html += '<div class="result-line">';
+          html += '<div class="result-line-content">';
+          html += '<span class="result-idx">' + (i + 1) + '.</span>';
+          html += '<span class="result-source">' + sortedSource + '</span>';
+          for (const code of item.codes) {
+            html += '<span class="result-code">' + code + '</span>';
+          }
+          html += '</div>';
+          html += '<button class="copy-line-btn" onclick="copyHistoryLine(' + record.id + ', ' + i + ', true)">复制本行</button>';
+          html += '</div>';
+        }
+      }
+
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+
+  content.innerHTML = html;
+}
+
+function toggleHistoryItem(id) {
+  if (!window._historyExpanded) {
+    window._historyExpanded = {};
+  }
+  window._historyExpanded[id] = !window._historyExpanded[id];
+  saveHistoryExpandedState();
+  renderHistory();
+}
+
+function saveHistoryExpandedState() {
+  if (window._historyExpanded) {
+    localStorage.setItem('historyItemExpanded', JSON.stringify(window._historyExpanded));
+  }
+}
+
+function loadHistoryExpandedState() {
+  try {
+    const data = localStorage.getItem('historyItemExpanded');
+    if (data) {
+      window._historyExpanded = JSON.parse(data);
+    } else {
+      window._historyExpanded = {};
+    }
+  } catch {
+    window._historyExpanded = {};
+  }
+}
+
+function toggleFilterSection() {
+  const content = document.getElementById('filterContent');
+  const arrow = document.getElementById('filterSectionArrow');
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    arrow.textContent = '▼';
+    localStorage.setItem('filterSectionExpanded', '1');
+  } else {
+    content.style.display = 'none';
+    arrow.textContent = '▶';
+    localStorage.setItem('filterSectionExpanded', '0');
+  }
+}
+
+function toggleHistorySection() {
+  const content = document.getElementById('historyContent');
+  const arrow = document.getElementById('historySectionArrow');
+  if (content.style.display === 'none') {
+    content.style.display = 'block';
+    arrow.textContent = '▼';
+    localStorage.setItem('historySectionExpanded', '1');
+  } else {
+    content.style.display = 'none';
+    arrow.textContent = '▶';
+    localStorage.setItem('historySectionExpanded', '0');
+  }
+}
+
+function deleteHistoryItem(id) {
+  if (!confirm('确定要删除这条历史记录吗？')) return;
+
+  const history = getHistory().filter(r => r.id !== id);
+  localStorage.setItem('mindmap_history', JSON.stringify(history));
+  renderHistory();
+  showToast('已删除');
+}
+
+function clearAllHistory() {
+  if (!confirm('确定要清空全部历史记录吗？')) return;
+
+  localStorage.removeItem('mindmap_history');
+  renderHistory();
+  showToast('已清空全部历史');
+}
+
+function copyHistoryLine(recordId, index, isRandom) {
+  const history = getHistory();
+  const record = history.find(r => r.id === recordId);
+  if (!record) return;
+
+  const results = isRandom ? record.results.filter(r => r.isRandom) : record.results.filter(r => !r.isRandom);
+  const item = results[index];
+  if (!item) return;
+
+  const sortedSource = sortSourceAsc(item.source);
+  const text = sortedSource + ' ' + item.codes.join(' ');
+
+  navigator.clipboard.writeText(text).then(() => {
+    showToast('已复制本行');
+  }).catch(() => {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    showToast('已复制本行');
+  });
+}
+
+function saveConfig() {
+  const config = {
+    manualItems: [],
+    randomCount: document.getElementById('randomCount').value,
+    groupSimilarity: document.getElementById('groupSimilarity').value,
+    straightSimilarity: document.getElementById('straightSimilarity').value,
+    results: [],
+    filter: {
+      filterRandom: document.getElementById('filterRandom').checked,
+      filterZuSan: document.getElementById('filterZuSan').checked,
+      filterBaozi: document.getElementById('filterBaozi').checked,
+      danmaDigits: getSelectedDigits('danmaPicker'),
+      danmaCountDigits: getSelectedDigits('danmaCountPicker'),
+      hezhiDigits: getSelectedDigits('hezhiPicker'),
+      duanzu: [],
+      rongcuo: []
+    }
+  };
+
+  const manualItems = document.querySelectorAll('.manual-item');
+  for (const item of manualItems) {
+    const source = item.querySelector('.source-input').value.trim();
+    const dan = item.querySelector('.dan-input').value.trim();
+    config.manualItems.push({ source, dan });
+  }
+
+  const duanzuItems = document.querySelectorAll('.duanzu-item');
+  for (const item of duanzuItems) {
+    const p1 = item.querySelector('.duanzu-p1').value;
+    const p2 = item.querySelector('.duanzu-p2').value;
+    const p3 = item.querySelector('.duanzu-p3').value;
+    config.filter.duanzu.push({ p1, p2, p3 });
+  }
+
+  for (let i = 1; i <= rongcuoCount; i++) {
+    const item = document.getElementById('rongcuo-' + i);
+    if (item) {
+      config.filter.rongcuo.push(getRongcuoDigits(i));
+    }
+  }
+
+  if (window._lastResults && window._lastResults.length > 0) {
+    config.results = JSON.parse(JSON.stringify(window._lastResults));
+  }
+
+  localStorage.setItem('mindmap_config', JSON.stringify(config));
+}
+
+function loadConfig() {
+  try {
+    const data = localStorage.getItem('mindmap_config');
+    if (!data) {
+      addManualItem();
+      initDigitPicker('danmaPicker', saveConfig);
+      initDigitPicker('hezhiPicker', saveConfig);
+      initDigitPicker('danmaCountPicker', saveConfig, [1, 2, 3], true);
+      addDuanzu();
+      addRongcuo();
+      return;
+    }
+
+    const config = JSON.parse(data);
+
+    const list = document.getElementById('manualList');
+    list.innerHTML = '';
+    manualItemCount = 0;
+
+    if (config.manualItems && config.manualItems.length > 0) {
+      for (const item of config.manualItems) {
+        manualItemCount++;
+        const id = manualItemCount;
+        const el = document.createElement('div');
+        el.className = 'manual-item';
+        el.id = 'manual-' + id;
+        el.innerHTML = `
+          <div class="input-group">
+            <label>数据源（4-10位不重复数字）</label>
+            <input type="text" class="source-input" placeholder="例如：12345" maxlength="10" value="${item.source || ''}" oninput="saveConfig()">
+          </div>
+          <div class="input-group">
+            <label>铁胆（单数字/空）</label>
+            <input type="text" class="dan-input" placeholder="例如：5" maxlength="1" value="${item.dan || ''}" oninput="saveConfig()">
+          </div>
+          <button class="delete-btn" onclick="deleteManualItem(${id})" title="删除">×</button>
+        `;
+        list.appendChild(el);
+      }
+    } else {
+      addManualItem();
+    }
+
+    if (config.randomCount !== undefined) {
+      if (config.randomCount === '') {
+        document.getElementById('randomCount').value = '';
+      } else {
+        const val = parseInt(config.randomCount);
+        if (!isNaN(val) && val >= 0 && val <= 100) {
+          document.getElementById('randomCount').value = val;
+        }
+      }
+    }
+    if (config.groupSimilarity !== undefined) {
+      document.getElementById('groupSimilarity').value = config.groupSimilarity;
+      document.getElementById('groupSimilarityValue').textContent = config.groupSimilarity + '%';
+    }
+    if (config.straightSimilarity !== undefined) {
+      document.getElementById('straightSimilarity').value = config.straightSimilarity;
+      document.getElementById('straightSimilarityValue').textContent = config.straightSimilarity + '%';
+    }
+
+    if (config.results && config.results.length > 0) {
+      window._lastResults = JSON.parse(JSON.stringify(config.results));
+      renderResults(window._lastResults);
+    }
+
+    initDigitPicker('danmaPicker', saveConfig);
+    initDigitPicker('hezhiPicker', saveConfig);
+    initDigitPicker('danmaCountPicker', saveConfig, [1, 2, 3], true);
+
+    if (config.filter) {
+      document.getElementById('filterRandom').checked = config.filter.filterRandom !== false;
+      document.getElementById('filterZuSan').checked = config.filter.filterZuSan === true;
+      document.getElementById('filterBaozi').checked = config.filter.filterBaozi === true;
+
+      if (config.filter.danmaDigits && config.filter.danmaDigits.length > 0) {
+        setSelectedDigits('danmaPicker', config.filter.danmaDigits);
+      }
+      if (config.filter.danmaCountDigits && config.filter.danmaCountDigits.length > 0) {
+        setSelectedDigits('danmaCountPicker', config.filter.danmaCountDigits);
+      } else {
+        setSelectedDigits('danmaCountPicker', ['1']);
+      }
+      if (config.filter.hezhiDigits && config.filter.hezhiDigits.length > 0) {
+        setSelectedDigits('hezhiPicker', config.filter.hezhiDigits);
+      }
+
+      if (config.filter.duanzu && config.filter.duanzu.length > 0) {
+        for (const dz of config.filter.duanzu) {
+          if (typeof dz === 'string') {
+            const parts = dz.split('-');
+            addDuanzu(parts[0] || '', parts[1] || '', parts[2] || '');
+          } else {
+            addDuanzu(dz.p1 || '', dz.p2 || '', dz.p3 || '');
+          }
+        }
+      } else {
+        addDuanzu();
+      }
+      if (config.filter.rongcuo && config.filter.rongcuo.length > 0) {
+        for (const rc of config.filter.rongcuo) {
+          if (Array.isArray(rc)) {
+            addRongcuo(rc);
+          } else {
+            addRongcuo();
+          }
+        }
+      } else {
+        addRongcuo();
+      }
+    } else {
+      addDuanzu();
+      addRongcuo();
+    }
+
+    updateSimilarity('group');
+  } catch (e) {
+    console.error('加载配置失败:', e);
+    addManualItem();
+    initDigitPicker('danmaPicker', saveConfig);
+    initDigitPicker('hezhiPicker', saveConfig);
+    initDigitPicker('danmaCountPicker', saveConfig, [1, 2, 3], true);
+    addDuanzu();
+    addRongcuo();
+  }
+}
+
+function init() {
+  loadConfig();
+  updateSimilarity('group');
+  updateSimilarity('straight');
+  renderHistory();
+
+  const expanded = localStorage.getItem('historySectionExpanded');
+  if (expanded !== '1') {
+    document.getElementById('historyContent').style.display = 'none';
+    document.getElementById('historySectionArrow').textContent = '▶';
+  }
+
+  const filterExpanded = localStorage.getItem('filterSectionExpanded');
+  if (filterExpanded === '0') {
+    document.getElementById('filterContent').style.display = 'none';
+    document.getElementById('filterSectionArrow').textContent = '▶';
+  }
+}
+
+init();
+</script>
+</body>
+</html>
