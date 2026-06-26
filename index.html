@@ -760,7 +760,7 @@ h1 {
   <div class="section">
     <div class="section-title">批量随机生成五码</div>
     <div class="input-group">
-      <label>随机生成数据源数量（1~100，填0则不随机生成）</label>
+      <label>随机生成五码数量组（自动随机五注号码）</label>
       <input type="number" id="randomCount" min="0" max="100" value="10" placeholder="请输入数量" oninput="updateSimilarity('group');saveConfig()">
     </div>
   </div>
@@ -794,43 +794,50 @@ h1 {
     <div id="filterContent">
       <div class="filter-subtitle">开关设置</div>
       <div class="switch-row">
-        <span class="switch-label-text">随机数据源适用筛选</span>
+        <span class="switch-label-text">随机五码 适用筛选条件</span>
         <label class="toggle-switch">
           <input type="checkbox" id="filterRandom" checked onchange="saveConfig()">
           <span class="toggle-slider"></span>
         </label>
       </div>
       <div class="switch-row">
-        <span class="switch-label-text">剔除组三</span>
+        <span class="switch-label-text">去掉组三</span>
         <label class="toggle-switch">
           <input type="checkbox" id="filterZuSan" onchange="saveConfig()">
           <span class="toggle-slider"></span>
         </label>
       </div>
       <div class="switch-row">
-        <span class="switch-label-text">剔除豹子</span>
+        <span class="switch-label-text">去掉豹子</span>
         <label class="toggle-switch">
           <input type="checkbox" id="filterBaozi" onchange="saveConfig()">
           <span class="toggle-slider"></span>
         </label>
       </div>
+      <div class="switch-row">
+        <span class="switch-label-text">显示胆码</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="showDanma" checked onchange="saveConfig()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
 
-      <div class="filter-subtitle">胆码</div>
-      <div class="digit-label">选择数字（点击选中/取消）</div>
+      <div class="filter-subtitle">条件1 胆码</div>
+      <div class="digit-label">选择胆</div>
       <div class="digit-picker" id="danmaPicker"></div>
       <div class="digit-label" style="margin-top: 12px;">至少包含几个胆</div>
       <div class="digit-picker" id="danmaCountPicker"></div>
 
-      <div class="filter-subtitle" style="margin-top: 16px;">排除和值尾</div>
-      <div class="digit-label">和值尾数（点击选中/取消）</div>
+      <div class="filter-subtitle" style="margin-top: 16px;">条件2 排除和尾</div>
+      <div class="digit-label">和值尾数</div>
       <div class="digit-picker" id="hezhiPicker"></div>
 
-      <div class="filter-subtitle" style="margin-top: 16px;">断组（任意一套命中即删号）
+      <div class="filter-subtitle" style="margin-top: 16px;">条件3 断组
         <button class="btn-add" onclick="addDuanzu()">+ 添加断组</button>
       </div>
       <div id="duanzuList"></div>
 
-      <div class="filter-subtitle" style="margin-top: 16px;">容错01（任意一套超限即删号）
+      <div class="filter-subtitle" style="margin-top: 16px;">条件4 容错=01
         <button class="btn-add" onclick="addRongcuo()">+ 添加容错</button>
       </div>
       <div id="rongcuoList"></div>
@@ -839,7 +846,7 @@ h1 {
 
   <div class="section">
     <div class="action-row">
-      <button class="btn btn-primary btn-block" onclick="generateAllResults()">批量生成全部结果</button>
+      <button class="btn btn-primary btn-block" onclick="generateAllResults()">生成全部结果</button>
       <button class="btn btn-danger btn-block" onclick="clearAll()">清空所有内容</button>
     </div>
   </div>
@@ -976,7 +983,7 @@ function addRongcuo(digits = []) {
   item.id = 'rongcuo-' + id;
   item.innerHTML = `
     <div class="rongcuo-header">
-      <span class="rongcuo-title">容错-0${id}</span>
+      <span class="rongcuo-title">容错${id}</span>
       <button class="rongcuo-delete-btn" onclick="deleteRongcuo(${id})">−</button>
     </div>
     <div class="digit-picker rongcuo-picker" id="rongcuo-picker-${id}"></div>
@@ -1027,7 +1034,7 @@ function renumberRongcuo() {
     item.id = 'rongcuo-' + newId;
     const titleEl = item.querySelector('.rongcuo-title');
     if (titleEl) {
-      titleEl.textContent = '容错-0' + newId;
+      titleEl.textContent = '容错' + newId;
     }
     const picker = item.querySelector('.rongcuo-picker');
     if (picker) {
@@ -1503,7 +1510,7 @@ function generateAllResults() {
 
   for (let i = 0; i < randomCount; i++) {
     let source;
-    let poolSize = 0;
+    let validPool = null;
     let attempts = 0;
     const maxAttempts = 1000;
 
@@ -1512,10 +1519,9 @@ function generateAllResults() {
       attempts++;
 
       if (filterRandom) {
-        poolSize = quickFilterCheck(source);
-        if (poolSize < 5) continue;
-      } else {
-        poolSize = 5;
+        const pool = generateNumberPool(source, '', true);
+        if (pool.length < 5) continue;
+        validPool = pool;
       }
 
       const sourceSet = new Set(source.split(''));
@@ -1535,13 +1541,13 @@ function generateAllResults() {
       break;
     } while (attempts < maxAttempts);
 
-    if (poolSize < 5) {
+    if (filterRandom && !validPool) {
       alert('无法生成满足筛选条件的随机数据源，请放宽筛选条件');
       return;
     }
 
     generatedSources.push(source);
-    allList.push({ source, dan: '', isRandom: true });
+    allList.push({ source, dan: '', isRandom: true, _pool: validPool });
   }
 
   generateResultsFromList(allList);
@@ -1560,7 +1566,12 @@ function generateResultsFromList(sourceList) {
 
   const allPools = [];
   for (const item of sourceList) {
-    const pool = generateNumberPool(item.source, item.dan, item.isRandom);
+    let pool;
+    if (item._pool) {
+      pool = item._pool;
+    } else {
+      pool = generateNumberPool(item.source, item.dan, item.isRandom);
+    }
     if (pool.length < 5) {
       alert('数据源 "' + item.source + '" 生成的号码池不足5注，请放宽条件');
       return;
@@ -1571,58 +1582,133 @@ function generateResultsFromList(sourceList) {
   const result = [];
   const groupCountMap = {};
   const straightCountMap = {};
+  const showDanma = document.getElementById('showDanma').checked;
 
   for (const item of allPools) {
-    const selected = [];
-    const usedGroups = new Set();
-    let leopardCount = 0;
     const pool = [...item.pool];
+    let selected = [];
+    let displayDanma = '';
+    let maxAttempts = 100;
 
-    let attempts = 0;
-    const maxAttempts = pool.length * 3;
+    if (showDanma && item.isRandom && (!item.dan || item.dan === '')) {
+      while (maxAttempts > 0) {
+        const danmaCandidate = item.source[Math.floor(Math.random() * item.source.length)];
+        const poolWithDanma = pool.filter(code => code.includes(danmaCandidate));
 
-    while (selected.length < 5 && attempts < maxAttempts) {
-      attempts++;
-      let found = false;
-
-      for (let i = 0; i < pool.length; i++) {
-        const code = pool[i];
-        const groupKey = getGroupKey(code);
-
-        if (usedGroups.has(groupKey)) continue;
-
-        const currentGroupCount = groupCountMap[groupKey] || 0;
-        const currentStraightCount = straightCountMap[code] || 0;
-
-        if (currentGroupCount >= maxGroupCount) continue;
-        if (currentStraightCount >= maxStraightCount) continue;
-
-        if (isLeopardCode(code) && leopardCount >= 1) continue;
-
-        selected.push(code);
-        usedGroups.add(groupKey);
-        groupCountMap[groupKey] = currentGroupCount + 1;
-        straightCountMap[code] = currentStraightCount + 1;
-        if (isLeopardCode(code)) {
-          leopardCount++;
+        if (poolWithDanma.length < 3) {
+          maxAttempts--;
+          continue;
         }
-        pool.splice(i, 1);
-        found = true;
-        break;
+
+        const targetDanmaHits = 3 + Math.floor(Math.random() * 3);
+
+        const shuffledPool = [...pool];
+        shuffle(shuffledPool);
+
+        const usedGroups = new Set();
+        const tempSelected = [];
+
+        while (tempSelected.length < 5 && shuffledPool.length > 0) {
+          let found = false;
+
+          for (let i = 0; i < shuffledPool.length; i++) {
+            const code = shuffledPool[i];
+            const groupKey = getGroupKey(code);
+
+            if (usedGroups.has(groupKey)) continue;
+
+            const currentGroupCount = groupCountMap[groupKey] || 0;
+            const currentStraightCount = straightCountMap[code] || 0;
+
+            if (currentGroupCount >= maxGroupCount) continue;
+            if (currentStraightCount >= maxStraightCount) continue;
+
+            if (isLeopardCode(code) && tempSelected.some(c => isLeopardCode(c))) continue;
+
+            tempSelected.push(code);
+            usedGroups.add(groupKey);
+            if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
+            groupCountMap[groupKey]++;
+            if (!straightCountMap[code]) straightCountMap[code] = 0;
+            straightCountMap[code]++;
+            shuffledPool.splice(i, 1);
+            found = true;
+            break;
+          }
+
+          if (!found) break;
+        }
+
+        const danmaHitCount = tempSelected.filter(code => code.includes(danmaCandidate)).length;
+
+        if (danmaHitCount >= targetDanmaHits && tempSelected.length === 5) {
+          selected = tempSelected;
+          displayDanma = danmaCandidate;
+          break;
+        }
+
+        maxAttempts--;
       }
 
-      if (!found) break;
-    }
+      if (selected.length < 5) {
+        alert('无法生成满足胆码要求的号码，请放宽条件');
+        return;
+      }
+    } else {
+      const usedGroups = new Set();
+      let leopardCount = 0;
+      let attempts = 0;
+      const innerMaxAttempts = pool.length * 3;
 
-    if (selected.length < 5) {
-      alert('备选号码池不足以满足相似度限制，请放宽百分比数值或减少生成数据源条数');
-      return;
+      while (selected.length < 5 && attempts < innerMaxAttempts) {
+        attempts++;
+        let found = false;
+
+        for (let i = 0; i < pool.length; i++) {
+          const code = pool[i];
+          const groupKey = getGroupKey(code);
+
+          if (usedGroups.has(groupKey)) continue;
+
+          const currentGroupCount = groupCountMap[groupKey] || 0;
+          const currentStraightCount = straightCountMap[code] || 0;
+
+          if (currentGroupCount >= maxGroupCount) continue;
+          if (currentStraightCount >= maxStraightCount) continue;
+
+          if (isLeopardCode(code) && leopardCount >= 1) continue;
+
+          selected.push(code);
+          usedGroups.add(groupKey);
+          if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
+          groupCountMap[groupKey]++;
+          if (!straightCountMap[code]) straightCountMap[code] = 0;
+          straightCountMap[code]++;
+          if (isLeopardCode(code)) {
+            leopardCount++;
+          }
+          pool.splice(i, 1);
+          found = true;
+          break;
+        }
+
+        if (!found) break;
+      }
+
+      if (selected.length < 5) {
+        alert('备选号码池不足以满足相似度限制，请放宽百分比数值或减少生成数据源条数');
+        return;
+      }
+
+      displayDanma = item.dan && item.dan !== '' ? item.dan : item.source[Math.floor(Math.random() * item.source.length)];
     }
 
     result.push({
       source: item.source,
       codes: selected,
-      isRandom: item.isRandom
+      isRandom: item.isRandom,
+      dan: item.dan || '',
+      displayDanma: displayDanma
     });
   }
 
@@ -1666,14 +1752,12 @@ function renderResults(results) {
     html += '<div class="result-group-title">手动录入结果（' + manualResults.length + ' 条）</div>';
     for (let i = 0; i < manualResults.length; i++) {
       const item = manualResults[i];
-      const sortedSource = sortSourceAsc(item.source);
+      const lineText = buildResultLine(item);
+
       html += '<div class="result-line">';
       html += '<div class="result-line-content">';
       html += '<span class="result-idx">' + (i + 1) + '.</span>';
-      html += '<span class="result-source">' + sortedSource + '</span>';
-      for (const code of item.codes) {
-        html += '<span class="result-code">' + code + '</span>';
-      }
+      html += '<span class="result-code">' + lineText + '</span>';
       html += '</div>';
       html += '<button class="copy-line-btn" onclick="copyLine(' + globalIndex + ')">复制本行</button>';
       html += '</div>';
@@ -1686,14 +1770,12 @@ function renderResults(results) {
     html += '<div class="result-group-title">随机生成结果（' + randomResults.length + ' 条）</div>';
     for (let i = 0; i < randomResults.length; i++) {
       const item = randomResults[i];
-      const sortedSource = sortSourceAsc(item.source);
+      const lineText = buildResultLine(item);
+
       html += '<div class="result-line">';
       html += '<div class="result-line-content">';
       html += '<span class="result-idx">' + (i + 1) + '.</span>';
-      html += '<span class="result-source">' + sortedSource + '</span>';
-      for (const code of item.codes) {
-        html += '<span class="result-code">' + code + '</span>';
-      }
+      html += '<span class="result-code">' + lineText + '</span>';
       html += '</div>';
       html += '<button class="copy-line-btn" onclick="copyLine(' + globalIndex + ')">复制本行</button>';
       html += '</div>';
@@ -1705,13 +1787,23 @@ function renderResults(results) {
   content.innerHTML = html;
 }
 
+function buildResultLine(item) {
+  const showDanma = document.getElementById('showDanma').checked;
+  const qihao = getCurrentQihao();
+  const sortedSource = sortSourceAsc(item.source);
+  let text = qihao + '期 【';
+  if (showDanma && item.displayDanma) {
+    text += item.displayDanma + '胆 ';
+  }
+  text += sortedSource + ' ' + item.codes.join(' ') + '】';
+  return text;
+}
+
 function copyLine(index) {
   const results = window._lastResults || [];
   if (!results[index]) return;
 
-  const item = results[index];
-  const sortedSource = sortSourceAsc(item.source);
-  const text = sortedSource + ' ' + item.codes.join(' ');
+  const text = buildResultLine(results[index]);
 
   navigator.clipboard.writeText(text).then(() => {
     showToast('已复制本行');
@@ -1735,8 +1827,7 @@ function copyAllResults() {
 
   let text = '';
   for (const item of results) {
-    const sortedSource = sortSourceAsc(item.source);
-    text += sortedSource + ' ' + item.codes.join(' ') + '\n';
+    text += buildResultLine(item) + '\n';
   }
   text = text.trim();
 
@@ -1777,6 +1868,7 @@ function clearAll() {
   document.getElementById('filterRandom').checked = true;
   document.getElementById('filterZuSan').checked = false;
   document.getElementById('filterBaozi').checked = false;
+  document.getElementById('showDanma').checked = true;
 
   initDigitPicker('danmaPicker', saveConfig);
   initDigitPicker('hezhiPicker', saveConfig);
@@ -1861,14 +1953,14 @@ function renderHistory() {
         html += '<div class="result-group-title">手动录入结果（' + manualResults.length + ' 条）</div>';
         for (let i = 0; i < manualResults.length; i++) {
           const item = manualResults[i];
-          const sortedSource = sortSourceAsc(item.source);
+          if (!item.displayDanma) {
+            item.displayDanma = item.dan || '';
+          }
+          const lineText = buildResultLine(item);
           html += '<div class="result-line">';
           html += '<div class="result-line-content">';
           html += '<span class="result-idx">' + (i + 1) + '.</span>';
-          html += '<span class="result-source">' + sortedSource + '</span>';
-          for (const code of item.codes) {
-            html += '<span class="result-code">' + code + '</span>';
-          }
+          html += '<span class="result-code">' + lineText + '</span>';
           html += '</div>';
           html += '<button class="copy-line-btn" onclick="copyHistoryLine(' + record.id + ', ' + i + ', false)">复制本行</button>';
           html += '</div>';
@@ -1879,14 +1971,14 @@ function renderHistory() {
         html += '<div class="result-group-title">随机生成结果（' + randomResults.length + ' 条）</div>';
         for (let i = 0; i < randomResults.length; i++) {
           const item = randomResults[i];
-          const sortedSource = sortSourceAsc(item.source);
+          if (!item.displayDanma) {
+            item.displayDanma = item.source[Math.floor(Math.random() * item.source.length)];
+          }
+          const lineText = buildResultLine(item);
           html += '<div class="result-line">';
           html += '<div class="result-line-content">';
           html += '<span class="result-idx">' + (i + 1) + '.</span>';
-          html += '<span class="result-source">' + sortedSource + '</span>';
-          for (const code of item.codes) {
-            html += '<span class="result-code">' + code + '</span>';
-          }
+          html += '<span class="result-code">' + lineText + '</span>';
           html += '</div>';
           html += '<button class="copy-line-btn" onclick="copyHistoryLine(' + record.id + ', ' + i + ', true)">复制本行</button>';
           html += '</div>';
@@ -1983,8 +2075,7 @@ function copyHistoryLine(recordId, index, isRandom) {
   const item = results[index];
   if (!item) return;
 
-  const sortedSource = sortSourceAsc(item.source);
-  const text = sortedSource + ' ' + item.codes.join(' ');
+  const text = buildResultLine(item);
 
   navigator.clipboard.writeText(text).then(() => {
     showToast('已复制本行');
@@ -2010,6 +2101,7 @@ function saveConfig() {
       filterRandom: document.getElementById('filterRandom').checked,
       filterZuSan: document.getElementById('filterZuSan').checked,
       filterBaozi: document.getElementById('filterBaozi').checked,
+      showDanma: document.getElementById('showDanma').checked,
       danmaDigits: getSelectedDigits('danmaPicker'),
       danmaCountDigits: getSelectedDigits('danmaCountPicker'),
       hezhiDigits: getSelectedDigits('hezhiPicker'),
@@ -2122,6 +2214,7 @@ function loadConfig() {
       document.getElementById('filterRandom').checked = config.filter.filterRandom !== false;
       document.getElementById('filterZuSan').checked = config.filter.filterZuSan === true;
       document.getElementById('filterBaozi').checked = config.filter.filterBaozi === true;
+      document.getElementById('showDanma').checked = config.filter.showDanma !== false;
 
       if (config.filter.danmaDigits && config.filter.danmaDigits.length > 0) {
         setSelectedDigits('danmaPicker', config.filter.danmaDigits);
@@ -2173,6 +2266,44 @@ function loadConfig() {
     addDuanzu();
     addRongcuo();
   }
+}
+
+function getCurrentQihao() {
+  const baseDate = new Date(2026, 5, 25);
+  const baseQihao = 166;
+
+  const holidays = [
+    { start: new Date(2026, 1, 14), end: new Date(2026, 1, 23) },
+    { start: new Date(2026, 9, 1), end: new Date(2026, 9, 4) }
+  ];
+
+  const now = new Date();
+  let today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  if (now.getHours() > 21 || (now.getHours() === 21 && now.getMinutes() >= 15)) {
+    today.setDate(today.getDate() + 1);
+  }
+
+  let marketDays = 0;
+  let current = new Date(baseDate);
+  current.setHours(0, 0, 0, 0);
+
+  while (current < today) {
+    current.setDate(current.getDate() + 1);
+    let isHoliday = false;
+    for (const h of holidays) {
+      if (current >= h.start && current <= h.end) {
+        isHoliday = true;
+        break;
+      }
+    }
+    if (!isHoliday) {
+      marketDays++;
+    }
+  }
+
+  return baseQihao + marketDays;
 }
 
 function init() {
