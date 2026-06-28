@@ -1791,9 +1791,9 @@ function buildResultLine(item) {
   const showDanma = document.getElementById('showDanma').checked;
   const qihao = getCurrentQihao();
   const sortedSource = sortSourceAsc(item.source);
-  let text = qihao + '期 【';
+  let text = qihao + '期【';
   if (showDanma && item.displayDanma) {
-    text += item.displayDanma + '胆 ';
+    text += item.displayDanma + '胆';
   }
   text += sortedSource + ' ' + item.codes.join(' ') + '】';
   return text;
