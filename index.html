@@ -2281,7 +2281,7 @@ function getCurrentQihao() {
   let today = new Date(now);
   today.setHours(0, 0, 0, 0);
 
-  if (now.getHours() > 21 || (now.getHours() === 21 && now.getMinutes() >= 15)) {
+  if (now.getHours() >= 23) {
     today.setDate(today.getDate() + 1);
   }
 
