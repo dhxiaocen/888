@@ -1583,6 +1583,8 @@ function generateResultsFromList(sourceList) {
   const groupCountMap = {};
   const straightCountMap = {};
   const showDanma = document.getElementById('showDanma').checked;
+  const filterZuSan = document.getElementById('filterZuSan').checked;
+  const maxZuSanPerSource = 3;
 
   for (const item of allPools) {
     const pool = [...item.pool];
@@ -1607,6 +1609,7 @@ function generateResultsFromList(sourceList) {
 
         const usedGroups = new Set();
         const tempSelected = [];
+        let zuSanCount = 0;
 
         while (tempSelected.length < 5 && shuffledPool.length > 0) {
           let found = false;
@@ -1625,12 +1628,15 @@ function generateResultsFromList(sourceList) {
 
             if (isLeopardCode(code) && tempSelected.some(c => isLeopardCode(c))) continue;
 
+            if (!filterZuSan && isZuSanCode(code) && zuSanCount >= maxZuSanPerSource) continue;
+
             tempSelected.push(code);
             usedGroups.add(groupKey);
             if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
             groupCountMap[groupKey]++;
             if (!straightCountMap[code]) straightCountMap[code] = 0;
             straightCountMap[code]++;
+            if (isZuSanCode(code)) zuSanCount++;
             shuffledPool.splice(i, 1);
             found = true;
             break;
@@ -1657,6 +1663,7 @@ function generateResultsFromList(sourceList) {
     } else {
       const usedGroups = new Set();
       let leopardCount = 0;
+      let zuSanCount = 0;
       let attempts = 0;
       const innerMaxAttempts = pool.length * 3;
 
@@ -1678,6 +1685,8 @@ function generateResultsFromList(sourceList) {
 
           if (isLeopardCode(code) && leopardCount >= 1) continue;
 
+          if (!filterZuSan && isZuSanCode(code) && zuSanCount >= maxZuSanPerSource) continue;
+
           selected.push(code);
           usedGroups.add(groupKey);
           if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
@@ -1686,6 +1695,9 @@ function generateResultsFromList(sourceList) {
           straightCountMap[code]++;
           if (isLeopardCode(code)) {
             leopardCount++;
+          }
+          if (isZuSanCode(code)) {
+            zuSanCount++;
           }
           pool.splice(i, 1);
           found = true;
