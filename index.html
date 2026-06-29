@@ -1579,150 +1579,375 @@ function generateResultsFromList(sourceList) {
     allPools.push({ ...item, pool });
   }
 
-  const result = [];
+  const result = new Array(allPools.length);
   const groupCountMap = {};
   const straightCountMap = {};
   const showDanma = document.getElementById('showDanma').checked;
   const filterZuSan = document.getElementById('filterZuSan').checked;
-  const maxZuSanPerSource = 3;
+  const zuSanWeights = { 0: 15, 1: 45, 2: 40 };
 
-  for (const item of allPools) {
+  const generateOne = (item, targetZuSan) => {
     const pool = [...item.pool];
-    let selected = [];
-    let displayDanma = '';
-    let maxAttempts = 100;
+    const allZuSan = pool.filter(c => isZuSanCode(c));
+    const allZuLiu = pool.filter(c => !isZuSanCode(c) && !isLeopardCode(c));
+    const allBaozi = pool.filter(c => isLeopardCode(c));
+    const nonZuSanCodes = [...allZuLiu, ...allBaozi];
+
+    const pickUniqueGroups = (codeList, count) => {
+      const used = new Set();
+      const result = [];
+      const shuffled = [...codeList];
+      shuffle(shuffled);
+      for (const code of shuffled) {
+        if (result.length >= count) break;
+        const gk = getGroupKey(code);
+        if (used.has(gk)) continue;
+        if ((groupCountMap[gk] || 0) >= maxGroupCount) continue;
+        if ((straightCountMap[code] || 0) >= maxStraightCount) continue;
+        used.add(gk);
+        result.push(code);
+      }
+      return result;
+    };
 
     if (showDanma && item.isRandom && (!item.dan || item.dan === '')) {
-      while (maxAttempts > 0) {
-        const danmaCandidate = item.source[Math.floor(Math.random() * item.source.length)];
-        const poolWithDanma = pool.filter(code => code.includes(danmaCandidate));
+      const danmaSource = item.source.split('');
+      shuffle(danmaSource);
 
-        if (poolWithDanma.length < 3) {
-          maxAttempts--;
+      const retryCount = targetZuSan <= 1 ? 50 : 30;
+
+      for (const danma of danmaSource) {
+        const zsWithDanma = allZuSan.filter(c => c.includes(danma));
+        const zsWithoutDanma = allZuSan.filter(c => !c.includes(danma));
+        const nzsWithDanma = nonZuSanCodes.filter(c => c.includes(danma));
+        const nzsWithoutDanma = nonZuSanCodes.filter(c => !c.includes(danma));
+
+        const zsDanmaGroups = new Set(zsWithDanma.map(c => getGroupKey(c))).size;
+        const zsNoDanmaGroups = new Set(zsWithoutDanma.map(c => getGroupKey(c))).size;
+        const nzsDanmaGroups = new Set(nzsWithDanma.map(c => getGroupKey(c))).size;
+        const nzsNoDanmaGroups = new Set(nzsWithoutDanma.map(c => getGroupKey(c))).size;
+
+        for (let minDanmaHits = 5; minDanmaHits >= 3; minDanmaHits--) {
+          const combos = [];
+          for (let zsDan = 0; zsDan <= targetZuSan; zsDan++) {
+            const nzsDan = minDanmaHits - zsDan;
+            const nzsTotal = 5 - targetZuSan;
+            if (nzsDan < 0 || nzsDan > nzsTotal) continue;
+            if (zsDan > zsDanmaGroups) continue;
+            if ((targetZuSan - zsDan) > zsNoDanmaGroups && (targetZuSan - zsDan) > 0) continue;
+            if (nzsDan > nzsDanmaGroups) continue;
+            if ((nzsTotal - nzsDan) > nzsNoDanmaGroups && (nzsTotal - nzsDan) > 0) continue;
+            if (zsDan + nzsDan < minDanmaHits) continue;
+            combos.push({ zsDan, nzsDan });
+          }
+          if (combos.length === 0) continue;
+
+          shuffle(combos);
+          for (const combo of combos) {
+            const { zsDan, nzsDan } = combo;
+            const zsNoDan = targetZuSan - zsDan;
+            const nzsNoDan = (5 - targetZuSan) - nzsDan;
+
+            let retry = retryCount;
+            while (retry > 0) {
+              retry--;
+              const pickedZsDan = pickUniqueGroups(zsWithDanma, zsDan);
+              if (pickedZsDan.length < zsDan) continue;
+              const pickedZsNoDan = pickUniqueGroups(zsWithoutDanma, zsNoDan);
+              if (pickedZsNoDan.length < zsNoDan) continue;
+              const pickedNzsDan = pickUniqueGroups(nzsWithDanma, nzsDan);
+              if (pickedNzsDan.length < nzsDan) continue;
+              const pickedNzsNoDan = pickUniqueGroups(nzsWithoutDanma, nzsNoDan);
+              if (pickedNzsNoDan.length < nzsNoDan) continue;
+
+              const allPicked = [...pickedZsDan, ...pickedZsNoDan, ...pickedNzsDan, ...pickedNzsNoDan];
+              if (allPicked.length !== 5) continue;
+              if (allPicked.filter(c => isLeopardCode(c)).length > 1) continue;
+
+              // 强制检查组三数量
+              const actualZsCount = allPicked.filter(c => isZuSanCode(c)).length;
+              if (actualZsCount !== targetZuSan) {
+                // 组三数量不对，撤销并继续尝试
+                continue;
+              }
+
+              shuffle(allPicked);
+              for (const c of allPicked) {
+                const gk = getGroupKey(c);
+                groupCountMap[gk] = (groupCountMap[gk] || 0) + 1;
+                straightCountMap[c] = (straightCountMap[c] || 0) + 1;
+              }
+              return { codes: allPicked, displayDanma: danma };
+            }
+          }
+        }
+      }
+      return null;
+    } else {
+      const allNonZuSan = pool.filter(c => !isZuSanCode(c));
+      const pickFromList = (list, count) => {
+        const used = new Set();
+        const result = [];
+        const shuffled = [...list];
+        shuffle(shuffled);
+        for (const code of shuffled) {
+          if (result.length >= count) break;
+          const gk = getGroupKey(code);
+          if (used.has(gk)) continue;
+          if ((groupCountMap[gk] || 0) >= maxGroupCount) continue;
+          if ((straightCountMap[code] || 0) >= maxStraightCount) continue;
+          if (isLeopardCode(code) && result.some(c => isLeopardCode(c))) continue;
+          used.add(gk);
+          result.push(code);
+        }
+        return result;
+      };
+
+      const attempts = targetZuSan <= 1 ? 50 : 30;
+      let attemptCount = attempts;
+      while (attemptCount > 0) {
+        attemptCount--;
+        const pickedZs = pickFromList(allZuSan, targetZuSan);
+        if (pickedZs.length < targetZuSan) continue;
+        const pickedNzs = pickFromList(allNonZuSan, 5 - targetZuSan);
+        if (pickedNzs.length < (5 - targetZuSan)) continue;
+
+        const allPicked = [...pickedZs, ...pickedNzs];
+
+        // 强制检查组三数量
+        const actualZsCount = allPicked.filter(c => isZuSanCode(c)).length;
+        if (actualZsCount !== targetZuSan) {
           continue;
         }
 
-        const targetDanmaHits = 3 + Math.floor(Math.random() * 3);
+        shuffle(allPicked);
+        for (const c of allPicked) {
+          const gk = getGroupKey(c);
+          groupCountMap[gk] = (groupCountMap[gk] || 0) + 1;
+          straightCountMap[c] = (straightCountMap[c] || 0) + 1;
+        }
+        const dDanma = item.dan && item.dan !== '' ? item.dan : item.source[Math.floor(Math.random() * item.source.length)];
+        return { codes: allPicked, displayDanma: dDanma };
+      }
+      return null;
+    }
+  };
 
-        const shuffledPool = [...pool];
-        shuffle(shuffledPool);
+  const isFeasible = (item, n) => {
+    const zs = item.pool.filter(c => isZuSanCode(c));
+    const nzs = item.pool.filter(c => !isZuSanCode(c));
+    const zsg = new Set(zs.map(c => getGroupKey(c))).size;
+    const nzsg = new Set(nzs.map(c => getGroupKey(c))).size;
+    if (zsg < n || nzsg < (5 - n)) return false;
 
-        const usedGroups = new Set();
-        const tempSelected = [];
-        let zuSanCount = 0;
+    if (showDanma && item.isRandom && (!item.dan || item.dan === '')) {
+      const digits = item.source.split('');
+      let anyFeasible = false;
+      for (const danma of digits) {
+        const zsDan = zs.filter(c => c.includes(danma));
+        const zsNoDan = zs.filter(c => !c.includes(danma));
+        const nzsDan = nzs.filter(c => c.includes(danma));
+        const nzsNoDan = nzs.filter(c => !c.includes(danma));
+        const zsDG = new Set(zsDan.map(c => getGroupKey(c))).size;
+        const zsNDG = new Set(zsNoDan.map(c => getGroupKey(c))).size;
+        const nzsDG = new Set(nzsDan.map(c => getGroupKey(c))).size;
+        const nzsNDG = new Set(nzsNoDan.map(c => getGroupKey(c))).size;
 
-        while (tempSelected.length < 5 && shuffledPool.length > 0) {
-          let found = false;
-
-          for (let i = 0; i < shuffledPool.length; i++) {
-            const code = shuffledPool[i];
-            const groupKey = getGroupKey(code);
-
-            if (usedGroups.has(groupKey)) continue;
-
-            const currentGroupCount = groupCountMap[groupKey] || 0;
-            const currentStraightCount = straightCountMap[code] || 0;
-
-            if (currentGroupCount >= maxGroupCount) continue;
-            if (currentStraightCount >= maxStraightCount) continue;
-
-            if (isLeopardCode(code) && tempSelected.some(c => isLeopardCode(c))) continue;
-
-            if (!filterZuSan && isZuSanCode(code) && zuSanCount >= maxZuSanPerSource) continue;
-
-            tempSelected.push(code);
-            usedGroups.add(groupKey);
-            if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
-            groupCountMap[groupKey]++;
-            if (!straightCountMap[code]) straightCountMap[code] = 0;
-            straightCountMap[code]++;
-            if (isZuSanCode(code)) zuSanCount++;
-            shuffledPool.splice(i, 1);
-            found = true;
+        for (let hits = 3; hits <= 5; hits++) {
+          for (let zsD = 0; zsD <= n; zsD++) {
+            const nzsD = hits - zsD;
+            const nzsTotal = 5 - n;
+            if (nzsD < 0 || nzsD > nzsTotal) continue;
+            if (zsD > zsDG) continue;
+            if ((n - zsD) > zsNDG && (n - zsD) > 0) continue;
+            if (nzsD > nzsDG) continue;
+            if ((nzsTotal - nzsD) > nzsNDG && (nzsTotal - nzsD) > 0) continue;
+            anyFeasible = true;
             break;
           }
-
-          if (!found) break;
+          if (anyFeasible) break;
         }
-
-        const danmaHitCount = tempSelected.filter(code => code.includes(danmaCandidate)).length;
-
-        if (danmaHitCount >= targetDanmaHits && tempSelected.length === 5) {
-          selected = tempSelected;
-          displayDanma = danmaCandidate;
-          break;
-        }
-
-        maxAttempts--;
+        if (anyFeasible) break;
       }
-
-      if (selected.length < 5) {
-        alert('无法生成满足胆码要求的号码，请放宽条件');
-        return;
-      }
-    } else {
-      const usedGroups = new Set();
-      let leopardCount = 0;
-      let zuSanCount = 0;
-      let attempts = 0;
-      const innerMaxAttempts = pool.length * 3;
-
-      while (selected.length < 5 && attempts < innerMaxAttempts) {
-        attempts++;
-        let found = false;
-
-        for (let i = 0; i < pool.length; i++) {
-          const code = pool[i];
-          const groupKey = getGroupKey(code);
-
-          if (usedGroups.has(groupKey)) continue;
-
-          const currentGroupCount = groupCountMap[groupKey] || 0;
-          const currentStraightCount = straightCountMap[code] || 0;
-
-          if (currentGroupCount >= maxGroupCount) continue;
-          if (currentStraightCount >= maxStraightCount) continue;
-
-          if (isLeopardCode(code) && leopardCount >= 1) continue;
-
-          if (!filterZuSan && isZuSanCode(code) && zuSanCount >= maxZuSanPerSource) continue;
-
-          selected.push(code);
-          usedGroups.add(groupKey);
-          if (!groupCountMap[groupKey]) groupCountMap[groupKey] = 0;
-          groupCountMap[groupKey]++;
-          if (!straightCountMap[code]) straightCountMap[code] = 0;
-          straightCountMap[code]++;
-          if (isLeopardCode(code)) {
-            leopardCount++;
-          }
-          if (isZuSanCode(code)) {
-            zuSanCount++;
-          }
-          pool.splice(i, 1);
-          found = true;
-          break;
-        }
-
-        if (!found) break;
-      }
-
-      if (selected.length < 5) {
-        alert('备选号码池不足以满足相似度限制，请放宽百分比数值或减少生成数据源条数');
-        return;
-      }
-
-      displayDanma = item.dan && item.dan !== '' ? item.dan : item.source[Math.floor(Math.random() * item.source.length)];
+      return anyFeasible;
     }
+    return true;
+  };
 
-    result.push({
-      source: item.source,
-      codes: selected,
-      isRandom: item.isRandom,
-      dan: item.dan || '',
-      displayDanma: displayDanma
-    });
+  const totalItems = allPools.length;
+  const allTargets = filterZuSan ? [0] : [0, 1, 2];
+
+  const itemData = allPools.map((item, idx) => {
+    return { idx, item, done: false, target: -1 };
+  });
+
+  const targetQuotas = {};
+  const actualCounts = { 0: 0, 1: 0, 2: 0 };
+  if (filterZuSan) {
+    targetQuotas[0] = totalItems;
+  } else {
+    let totalW = 0;
+    for (const t of [0,1,2]) totalW += zuSanWeights[t];
+    let assigned = 0;
+    for (const t of [0,1]) {
+      targetQuotas[t] = Math.round(totalItems * zuSanWeights[t] / totalW);
+      assigned += targetQuotas[t];
+    }
+    targetQuotas[2] = totalItems - assigned;
   }
+
+  const sortedTargets = filterZuSan ? [0] : [0, 1, 2];
+
+  const tryAssignTarget = (d, t) => {
+    if (actualCounts[t] >= targetQuotas[t]) return false;
+    if (!isFeasible(d.item, t)) return false;
+    const res = generateOne(d.item, t);
+    if (res) {
+      result[d.idx] = {
+        source: d.item.source,
+        codes: res.codes,
+        isRandom: d.item.isRandom,
+        dan: d.item.dan || '',
+        displayDanma: res.displayDanma
+      };
+      d.done = true;
+      d.target = t;
+      actualCounts[t]++;
+      return true;
+    }
+    return false;
+  };
+
+  for (const t of sortedTargets) {
+    const pending = itemData.filter(d => !d.done && isFeasible(d.item, t));
+    shuffle(pending);
+
+    for (const d of pending) {
+      if (actualCounts[t] >= targetQuotas[t]) break;
+      tryAssignTarget(d, t);
+    }
+  }
+
+  const stillPending = itemData.filter(d => !d.done);
+  if (stillPending.length > 0) {
+    shuffle(stillPending);
+
+    for (const d of stillPending) {
+      let assigned = false;
+      for (const t of sortedTargets) {
+        if (actualCounts[t] < targetQuotas[t] && isFeasible(d.item, t)) {
+          if (tryAssignTarget(d, t)) {
+            assigned = true;
+            break;
+          }
+        }
+      }
+      if (!assigned) {
+        const fallbackOrder = sortedTargets.slice().sort((a, b) => zuSanWeights[b] - zuSanWeights[a]);
+        for (const t of fallbackOrder) {
+          if (isFeasible(d.item, t)) {
+            const res = generateOne(d.item, t);
+            if (res) {
+              result[d.idx] = {
+                source: d.item.source,
+                codes: res.codes,
+                isRandom: d.item.isRandom,
+                dan: d.item.dan || '',
+                displayDanma: res.displayDanma
+              };
+              d.done = true;
+              d.target = t;
+              actualCounts[t]++;
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  for (const d of itemData) {
+    if (!d.done) {
+      alert('无法生成满足条件的号码，请放宽条件');
+      return;
+    }
+  }
+
+  // 终极校验：确保每条结果的组三数量在0-2之间
+  const maxFinalRetries = 20;
+  let finalRetry = 0;
+  while (finalRetry < maxFinalRetries) {
+    let hasBad = false;
+    for (let i = 0; i < result.length; i++) {
+      const item = result[i];
+      if (!item) continue;
+      const zsCount = item.codes.filter(c => isZuSanCode(c)).length;
+      if (zsCount > 2) {
+        hasBad = true;
+        // 回滚这条的全局计数
+        for (const c of item.codes) {
+          const gk = getGroupKey(c);
+          if (groupCountMap[gk]) groupCountMap[gk]--;
+          if (straightCountMap[c]) straightCountMap[c]--;
+        }
+        // 尝试重新生成，优先试2个组三，不行就1个，再不行就0个
+        let newRes = null;
+        for (const t of [2, 1, 0]) {
+          newRes = generateOne(allPools[i], t);
+          if (newRes) break;
+        }
+        if (newRes) {
+          result[i] = {
+            source: allPools[i].source,
+            codes: newRes.codes,
+            isRandom: allPools[i].isRandom,
+            dan: allPools[i].dan || '',
+            displayDanma: newRes.displayDanma
+          };
+        }
+      }
+    }
+    if (!hasBad) break;
+    finalRetry++;
+  }
+
+  // 最后再检查一遍，如果还有超过2个的，强制处理
+  for (let i = 0; i < result.length; i++) {
+    const item = result[i];
+    if (!item) continue;
+    const zsCount = item.codes.filter(c => isZuSanCode(c)).length;
+    if (zsCount > 2) {
+      console.error('终极校验失败，仍有超过2个组三的结果:', item);
+    }
+  }
+
+  // 统计组三分布
+  const distribution = { 0: 0, 1: 0, 2: 0 };
+  for (const item of result) {
+    if (item) {
+      let zsCount = 0;
+      for (const code of item.codes) {
+        if (isZuSanCode(code)) zsCount++;
+      }
+      if (zsCount >= 0 && zsCount <= 2) {
+        distribution[zsCount] = (distribution[zsCount] || 0) + 1;
+      }
+    }
+  }
+  
+  // 输出统计到控制台
+  console.log('【组三分布统计】');
+  console.log(`总条数: ${result.length}`);
+  console.log(`0个组三: ${distribution[0]} 条 (${Math.round(distribution[0]/result.length*100)}%)`);
+  console.log(`1个组三: ${distribution[1]} 条 (${Math.round(distribution[1]/result.length*100)}%)`);
+  console.log(`2个组三: ${distribution[2]} 条 (${Math.round(distribution[2]/result.length*100)}%)`);
+  console.log(`目标分布: 0个15% 1个45% 2个40%`);
+  console.log('配额详情:', targetQuotas);
+  console.log('实际分布:', actualCounts);
+
+  // 在页面上显示统计信息
+  window._lastDistribution = distribution;
+  window._showDistribution = true;
 
   renderResults(result);
   updateSimilarity('group');
@@ -1743,8 +1968,9 @@ function renderResults(results) {
     content.innerHTML = '<div class="empty-tip">暂无结果</div>';
     return;
   }
-
+  
   let html = '';
+
   const manualResults = [];
   const randomResults = [];
 
